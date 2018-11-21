@@ -6,14 +6,12 @@ public class CoffeeScript : MonoBehaviour
 {
 	[SerializeField] BudScript budScript;
 
-	private void OnTriggerEnter(Collider other)
+	private void OnTriggerEnter2D(Collider2D other)
 	{
-		string name = other.gameObject.name;
-
-		if (name == "Bud" || name == "Feet")
+		if (other.gameObject.name == "Bud")
 		{
-			print("jelou");
 			budScript.FillEnergy();
+			budScript.AddScore(10);
 			
 			Destroy(this.gameObject);
 		}

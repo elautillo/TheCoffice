@@ -14,8 +14,10 @@ public class BudScript : MonoBehaviour
     [Header("STATE")]
     bool playing;
     [SerializeField] Text txtMain;
-    enum BudState { pause, right, left, jump, hurt };
+    enum BudState { pause, walk, jump, hurt }
+    enum BudDirection { right, left }
     BudState budState = BudState.pause;
+    BudDirection budDirection = BudDirection.right;
 
     [Header("CONTROLS")]
     [SerializeField] KeyCode jumpButton;
@@ -45,7 +47,7 @@ public class BudScript : MonoBehaviour
     [Header("OTHER")]
     Animator playerAnimator;
     Rigidbody2D rb2D;
-
+    
     private void Awake()
 	{
         playing = false;
@@ -60,8 +62,8 @@ public class BudScript : MonoBehaviour
         txtMain.text = "Press any key to continue";
         txtScore.text = "Score: " + score.ToString();
 
-        jumpButton = KeyCode.Z;
-        shiftButton = KeyCode.X;
+        jumpButton = KeyCode.X;
+        shiftButton = KeyCode.Z;
 
         //GoToCheckpoint();
     }
@@ -73,68 +75,89 @@ public class BudScript : MonoBehaviour
             if (Input.anyKey)
             {
                 playing = true;
+                budState = BudState.walk;
                 InvokeRepeating("LoseEnergy", 0, dropRatio);
             }
             else return;
         }
 
-        if (energy < 0)
+        if (energy < 1)
         {
-            GoToCheckpoint();
+            //GoToCheckpoint();
         }
+    }
 
-        if (budState == BudState.hurt)
+    private void FixedUpdate()
+    {
+        CheckState();
+        CheckInputs();
+    }
+
+    private void CheckState()
+    {
+        switch (budState)
         {
-            if (IsGrounded()) budState = BudState.pause;
+            case BudState.hurt:
 
-            return;
+                playerAnimator.SetBool("walking", false);
+
+                if (IsGrounded()) budState = BudState.walk;
+
+                return;
+
+            case BudState.jump:
+
+                playerAnimator.SetBool("walking", false);
+
+                if (IsGrounded())
+                {
+                    rb2D.velocity = new Vector2(speed, jumpForce);
+                }
+                else rb2D.velocity = new Vector2(speed, rb2D.velocity.y);
+
+                budState = BudState.pause;
+
+                break;
+
+            case BudState.pause:
+
+                if (IsGrounded())
+                {
+                    budState = BudState.walk;
+                }
+
+                break;
+
+            case BudState.walk:
+
+                playerAnimator.SetBool("walking", true);
+
+                rb2D.velocity = new Vector2(speed, rb2D.velocity.y);
+
+                break;
         }
+    }
 
+    private void CheckInputs()
+    {
         if (Input.GetKey(jumpButton))
         {
             budState = BudState.jump;
         }
 
-        if (Input.GetKey(shiftButton))
+        if (Input.GetKeyDown(shiftButton))
         {
-            if (budState == BudState.left)
-			{
+            if (budDirection == BudDirection.left)
+            {
                 transform.localScale = new Vector2(1, 1);
-                budState = BudState.right;
+                budDirection = BudDirection.right;
             }
-            else if (budState == BudState.right)
-			{
+            else if (budDirection == BudDirection.right)
+            {
                 transform.localScale = new Vector2(-1, 1);
-                budState = BudState.left;
+                budDirection = BudDirection.left;
             }
             speed = -speed;
-        }
-
-        if (budState == BudState.jump)
-		{
-            budState = BudState.pause;
-
-            if (IsGrounded())
-			{
-                rb2D.velocity = new Vector2(speed, jumpForce);
-            }
-			else
-			{
-                rb2D.velocity = new Vector2(speed, rb2D.velocity.y);
-            }
-        }
-		else
-		{
-            rb2D.velocity = new Vector2(speed, rb2D.velocity.y);
-        }
-
-        if (budState == BudState.right || budState == BudState.left)
-		{
-            playerAnimator.SetBool("walking", true);
-        }
-		else
-		{
-            playerAnimator.SetBool("walking", false);
         }
     }
 
@@ -146,6 +169,7 @@ public class BudScript : MonoBehaviour
 		{
             this.transform.position = position;
         }
+        playing = false;
     }
 
     public int GetEnergy()
@@ -164,6 +188,11 @@ public class BudScript : MonoBehaviour
 	{
         energy = maxEnergy;
         txtEnergy.text = "Energy: " + energy.ToString() + "%";
+    }
+
+    public void AddScore(int plus)
+    {
+        score += plus;
         txtScore.text = "Score: " + score.ToString();
     }
 
@@ -180,19 +209,19 @@ public class BudScript : MonoBehaviour
     }
 
     private void OnCollisionEnter2D(Collision2D collision)
-	{
-        if (budState == BudState.right)
-		{
-            GetComponent<Rigidbody2D>().AddRelativeForce(
-            	new Vector2(-impactForceX, impactForceY), ForceMode2D.Impulse);
-
-            budState = BudState.hurt;
-        }
-		else if (budState == BudState.left)
-		{
-            GetComponent<Rigidbody2D>().AddRelativeForce(
-            	new Vector2(impactForceX, impactForceY), ForceMode2D.Impulse);
-
+    {
+        if (collision.gameObject.tag == "Enemy")
+        {
+            if (budDirection == BudDirection.right)
+            {
+                GetComponent<Rigidbody2D>().AddRelativeForce(
+                    new Vector2(-impactForceX, impactForceY), ForceMode2D.Impulse);
+            }
+            else if (budDirection == BudDirection.left)
+            {
+                GetComponent<Rigidbody2D>().AddRelativeForce(
+                    new Vector2(impactForceX, impactForceY), ForceMode2D.Impulse);
+            }
             budState = BudState.hurt;
         }
     }
