@@ -4,7 +4,7 @@ using UnityEngine;
 
 public class ClockScript : MonoBehaviour
 {
-	int counter = 0;
+	float counter = 0;
 	bool counting = false;
 	BudScript bud;
 	int score;
@@ -33,11 +33,11 @@ public class ClockScript : MonoBehaviour
 			{
 				bud.SetScore(score);
 			}
-			counter++;
+			counter += Time.deltaTime;
 			power.Play();
 		}
 
-		if (counter > 400)
+		if (counter > 4)
 		{
 			counting = false;
 			counter = 0;

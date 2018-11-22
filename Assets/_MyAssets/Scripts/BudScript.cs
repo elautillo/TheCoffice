@@ -32,7 +32,6 @@ public class BudScript : MonoBehaviour
     int maxEnergy = 100;
     [SerializeField] int energy;
     [SerializeField] float dropRatio = 0.1f;
-    [SerializeField] bool losingEnergy = false;
     [SerializeField] Text txtEnergy;
 
     [Header("SCORE")]
@@ -77,23 +76,21 @@ public class BudScript : MonoBehaviour
             {
                 GameController.SetPlay(true);
                 budState = BudState.walk;
-                txtMain.text = "";
+                txtMain.text = "Press Esc to quit";
                 
-                if (!losingEnergy)
-                {
-                    InvokeRepeating("LoseEnergy", 0, dropRatio); //cada vez mas rapido al pasar por checkpoint ??
-                    losingEnergy = true;
-                }
+                print("ARRANCAR INVOKE");
+                InvokeRepeating("LoseEnergy", 0, dropRatio); //cada vez mas rapido al pasar por checkpoint ??
+
             }
             else return;
         }
 
-        /* if (energy < 1)
+        if (energy < 1)
         {
-            losingEnergy = false;
+            CancelInvoke();
             GoToCheckpoint();
             FillEnergy(); // cambiar
-        } */
+        }
     }
 
     private void FixedUpdate()
@@ -170,6 +167,11 @@ public class BudScript : MonoBehaviour
                 budDirection = BudDirection.left;
             }
             speed = -speed;
+        }
+
+        if (Input.GetKeyDown(KeyCode.Escape))
+        {
+            Application.Quit();
         }
     }
 

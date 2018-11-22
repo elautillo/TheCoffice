@@ -4,36 +4,40 @@ using UnityEngine;
 
 public class SnakeScript : MonoBehaviour
 {
-	int counter = 0;
-	bool counting = false;
 	private Transform bud;
 	[SerializeField] GameObject slimePrefab;
 	private GameObject slime;
+	float speed = 0.5f;
+	[SerializeField] float attackSpeed = 2f;
+	float shotCadence;
 
 	private void Start()
 	{
 		bud = GameObject.Find("Bud").transform;
+		shotCadence = attackSpeed;
 	}
 
-	private void Update()
+	private void FixedUpdate()
 	{
 		transform.right = -(bud.position - transform.position);
-		slime = Instantiate(slimePrefab, transform.position, Quaternion.identity);
-
-		if (counting)
-		{
-			counter++;
-		}
-		else
-		{
-			slime.gameObject.GetComponent<Rigidbody2D>().velocity = new Vector2(-5, 0);
-			counting = true;
-		}
-
-		if (counter > 100)
-		{
-			counting = false;
-			counter = 0;
-		}
+		TryShoot();
 	}
+
+	void TryShoot()
+	{
+		shotCadence += Time.deltaTime;
+
+		if (shotCadence >= attackSpeed)
+        {
+            shotCadence = 0;
+
+            Shoot();
+        }
+    }
+
+    private void Shoot()
+    {
+        slime = Instantiate(slimePrefab, transform.position, Quaternion.identity);
+        slime.gameObject.GetComponent<Rigidbody2D>().velocity = (bud.position - transform.position * speed);
+    }
 }

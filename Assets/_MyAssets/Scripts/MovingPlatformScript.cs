@@ -9,7 +9,7 @@ public class MovingPlatformScript : MonoBehaviour
 
 	private void Awake()
 	{
-		rb2D = GetComponent<Rigidbody2D>();
+		rb2D = GetComponentInParent<Rigidbody2D>();
 	}
 
 	private void Update()
@@ -17,9 +17,8 @@ public class MovingPlatformScript : MonoBehaviour
 		rb2D.velocity = new Vector2(speed, 0);
 	}
 
-	private void OnCollisionEnter2D(Collision2D collision)
+	private void OnTriggerEnter2D(Collider2D collision)
 	{
-		print(collision.gameObject.name); // no colisionan con el grid ??
 		if (collision.gameObject.layer == 8)
 		{
 			speed = -speed;
