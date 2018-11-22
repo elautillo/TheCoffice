@@ -6,17 +6,11 @@ using UnityEngine.SceneManagement;
 
 public class BudScript : MonoBehaviour
 {
-    /*
-    - Cómo adaptar a Android
-    - 
-     */
-    
     [Header("STATE")]
-    bool playing;
     [SerializeField] Text txtMain;
     enum BudState { pause, walk, jump, hurt }
     enum BudDirection { right, left }
-    BudState budState = BudState.pause;
+    BudState budState;
     BudDirection budDirection = BudDirection.right;
 
     [Header("CONTROLS")]
@@ -38,10 +32,11 @@ public class BudScript : MonoBehaviour
     int maxEnergy = 100;
     [SerializeField] int energy;
     [SerializeField] float dropRatio = 0.1f;
+    [SerializeField] bool losingEnergy = false;
     [SerializeField] Text txtEnergy;
 
     [Header("SCORE")]
-    [SerializeField] int score = 0;
+    [SerializeField] int score;
     [SerializeField] Text txtScore;
     
     [Header("OTHER")]
@@ -50,8 +45,10 @@ public class BudScript : MonoBehaviour
     
     private void Awake()
 	{
-        playing = false;
+        GameController.SetPlay(false);
         energy = maxEnergy;
+        jumpButton = KeyCode.X;
+        shiftButton = KeyCode.Z;
 
         rb2D = GetComponent<Rigidbody2D>();
         playerAnimator = GetComponent<Animator>();
@@ -59,32 +56,44 @@ public class BudScript : MonoBehaviour
 
     private void Start()
 	{
-        txtMain.text = "Press any key to continue";
-        txtScore.text = "Score: " + score.ToString();
+        txtEnergy.text = "Energy: " + energy;
 
-        jumpButton = KeyCode.X;
-        shiftButton = KeyCode.Z;
+        GameController.GetSavedScore();
+        txtScore.text = "Score: " + score;
 
-        //GoToCheckpoint();
+        GameController.ClearData();
+
+        GoToCheckpoint();
     }
 
     private void Update()
 	{
-        if (!playing)
+        if (!GameController.IsPlaying())
         {
+            budState = BudState.pause; // sigue caminando al pasar un checkpoint ??
+            txtMain.text = "Press any key to continue";
+
             if (Input.anyKey)
             {
-                playing = true;
+                GameController.SetPlay(true);
                 budState = BudState.walk;
-                InvokeRepeating("LoseEnergy", 0, dropRatio);
+                txtMain.text = "";
+                
+                if (!losingEnergy)
+                {
+                    InvokeRepeating("LoseEnergy", 0, dropRatio); //cada vez mas rapido al pasar por checkpoint ??
+                    losingEnergy = true;
+                }
             }
             else return;
         }
 
-        if (energy < 1)
+        /* if (energy < 1)
         {
-            //GoToCheckpoint();
-        }
+            losingEnergy = false;
+            GoToCheckpoint();
+            FillEnergy(); // cambiar
+        } */
     }
 
     private void FixedUpdate()
@@ -112,6 +121,7 @@ public class BudScript : MonoBehaviour
                 if (IsGrounded())
                 {
                     rb2D.velocity = new Vector2(speed, jumpForce);
+                    GetComponent<AudioSource>().Play();
                 }
                 else rb2D.velocity = new Vector2(speed, rb2D.velocity.y);
 
@@ -121,7 +131,9 @@ public class BudScript : MonoBehaviour
 
             case BudState.pause:
 
-                if (IsGrounded())
+                playerAnimator.SetBool("walking", false);
+
+                if (GameController.IsPlaying() && IsGrounded())
                 {
                     budState = BudState.walk;
                 }
@@ -163,13 +175,7 @@ public class BudScript : MonoBehaviour
 
     private void GoToCheckpoint()
     {
-        Vector2 position = GameController.GetPosition();
-
-        if (position != Vector2.zero)
-		{
-            this.transform.position = position;
-        }
-        playing = false;
+        this.transform.position = GameController.GetPosition();
     }
 
     public int GetEnergy()
@@ -181,19 +187,30 @@ public class BudScript : MonoBehaviour
     {
         if (energy > 0) energy--;
 
-        txtEnergy.text = "Energy: " + energy.ToString() + "%";
+        txtEnergy.text = "Energy: " + energy + "%";
     }
 
     public void FillEnergy()
 	{
         energy = maxEnergy;
-        txtEnergy.text = "Energy: " + energy.ToString() + "%";
+        txtEnergy.text = "Energy: " + energy + "%";
     }
 
-    public void AddScore(int plus)
+    public int GetScore()
     {
-        score += plus;
-        txtScore.text = "Score: " + score.ToString();
+        return this.score;
+    }
+
+    public void SetScore(int number)
+    {
+        score = number;
+        txtScore.text = "Score: " + score;
+    }
+
+    public void AddScore(int bonus)
+    {
+        score += bonus;
+        txtScore.text = "Score: " + score;
     }
 
     private bool IsGrounded()

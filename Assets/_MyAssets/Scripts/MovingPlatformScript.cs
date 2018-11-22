@@ -17,10 +17,10 @@ public class MovingPlatformScript : MonoBehaviour
 		rb2D.velocity = new Vector2(speed, 0);
 	}
 
-	private void OnTriggerEnter2D(Collider2D other)
+	private void OnCollisionEnter2D(Collision2D collision)
 	{
-		print("hit");
-		if (other.gameObject.layer == 8)
+		print(collision.gameObject.name); // no colisionan con el grid ??
+		if (collision.gameObject.layer == 8)
 		{
 			speed = -speed;
 		}

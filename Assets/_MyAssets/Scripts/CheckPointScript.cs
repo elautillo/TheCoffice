@@ -4,13 +4,23 @@ using UnityEngine;
 
 public class CheckPointScript : MonoBehaviour
 {
-    private void OnTriggerEnter2D(Collider2D collision)
-    {
-        if (collision.gameObject.name == "Bud")
-        {
-            GameController.StorePosition(collision.gameObject.transform.position);
+    [SerializeField] int scoreBonus = 50;
 
-            Destroy(this.gameObject);
+    private void OnTriggerEnter2D(Collider2D other)
+    {
+        if (other.gameObject.name == "Bud")
+        {
+            BudScript budScript =
+                other.gameObject.GetComponent<BudScript>();
+
+            //budScript.FillEnergy();
+            budScript.AddScore(scoreBonus);
+
+            GameController.StoreAll(
+                transform.position,
+                budScript.GetScore());
+            
+            GameController.SetPlay(false);
         }
     }
 }
